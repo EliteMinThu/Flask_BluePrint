@@ -1,10 +1,7 @@
-# app/notes/routes.py (Corrected and Final Version)
 
 from flask import Blueprint, request, jsonify, session
-# --- FIX: make_dict_factory ကို ထည့်သွင်း import လုပ်ပါ ---
 from ..db import get_db_connection, release_db_connection, make_dict_factory
 
-# 'notes' ဆိုတဲ့ Blueprint object တစ်ခုကို တည်ဆောက်ပါ
 notes_bp = Blueprint('notes', __name__)
 
 @notes_bp.route('/cvform', methods=['POST'])

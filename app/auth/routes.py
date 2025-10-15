@@ -1,19 +1,18 @@
 # app/auth/routes.py
 
 import bcrypt
-from ..db import get_db_connection, release_db_connection # db.py က functions တွေကို import လုပ်ပါ
+from ..db import get_db_connection, release_db_connection 
 from flask import Blueprint, request, jsonify, session
-from google.oauth2 import id_token # User က "Sign in with Google" ကို နှိပ်လိုက်ရင် Google ကနေ ပြန်ပို့ပေးလိုက်တဲ့ token က မှန်ကန်ရဲ့လားဆိုတာ စစ်ဆေးဖို့ Google ရဲ့ library တွေပါ။
+from google.oauth2 import id_token 
 from google.auth.transport import requests as google_requests
-from flask import session #User တစ်ယောက် login ဝင်ပြီးသွားရင်၊ သူဘယ်သူလဲဆိုတာ မှတ်ထားဖို့ (logged-in state ကို ထိန်းသိမ်းဖို့) သုံးပါတယ်။
+from flask import session 
 from flask_mail import Message
-from .. import mail # __init__.py ထဲက mail object ကို import လုပ်ပါ
+from .. import mail 
 import uuid
 import secrets
 from datetime import datetime, timedelta
-from ..db import make_dict_factory # db.py ထဲက make_dict_factory ကို import လုပ်ပါ
+from ..db import make_dict_factory 
 
-# 1. 'auth' ဆိုတဲ့ Blueprint object တစ်ခုကို တည်ဆောက်ခြင်း
 auth_bp = Blueprint('auth', __name__)
 
 GOOGLE_CLIENT_ID = "749824701715-rbude5i5p8qj0g35vdctmjkb3ea45n1i.apps.googleusercontent.com"
@@ -76,11 +75,9 @@ def google_login():
         username = idinfo.get('name', email.split('@')[0])
         
         cursor.execute("SELECT * FROM users WHERE email = :email", email=email)
-        # --- FIX: Dictionary အဖြစ်ပြောင်းဖို့ rowfactory ထည့်ပါ ---
         cursor.rowfactory = make_dict_factory(cursor)
         user = cursor.fetchone()
         
-        # User မရှိသေးရင် အသစ်ဆောက်ပါ
         if not user:
             random_password = str(uuid.uuid4()).encode('utf-8')
             hashed_password = bcrypt.hashpw(random_password, bcrypt.gensalt())
@@ -89,12 +86,10 @@ def google_login():
                 username=username, email=email, password=hashed_password.decode('utf-8')
             )
             connection.commit()
-            # အသစ်ဆောက်ပြီး user ကို ပြန်ရှာပါ
             cursor.execute("SELECT * FROM users WHERE email = :email", email=email)
             cursor.rowfactory = make_dict_factory(cursor)
             user = cursor.fetchone()
 
-        # ---> ✅ အရေးကြီး: Session ကို ဒီနေရာမှာ သတ်မှတ်ပေးရပါမယ် <---
         if user:
             session['user_id'] = user['id']
             return jsonify({'message': 'Google login successful!', 'username': user['username'], 'email': user['email']})
